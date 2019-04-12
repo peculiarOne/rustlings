@@ -9,6 +9,13 @@
 
 // Put your function here!
 // fn ..... {
+    fn calculateprice(count: i32) -> i32 {
+        if (count <= 40) {
+            2 * count
+        } else {
+            count
+        }
+    }
 
 // Don't modify this function!
 #[test]
