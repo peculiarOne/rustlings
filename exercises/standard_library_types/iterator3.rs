@@ -24,6 +24,14 @@ pub struct NotDivisibleError {
 // evenly divisible by b.
 // Otherwise, it should return a suitable error.
 pub fn divide(a: i32, b: i32) -> Result<i32, DivisionError> {
+    let r = match b {
+      0 => Err(DivisionError::DivideByZero),
+      _ => match a%b {
+          0 => Ok(a/b),
+      _ => Err(DivisionError::NotDivisible(NotDivisibleError{dividend: a, divisor: b})),
+      }
+    };
+    r
 }
 
 #[cfg(test)]
@@ -58,7 +66,6 @@ mod tests {
     }
 
     // Iterator exercises using your `divide` function
-    /*
     #[test]
     fn result_with_list() {
         let numbers = vec![27, 297, 38502, 81];
@@ -74,7 +81,6 @@ mod tests {
         let x //... Fill in here!
         assert_eq!(format!("{:?}", x), "[Ok(1), Ok(11), Ok(1426), Ok(3)]");
     }
-    */
 }
 
 
