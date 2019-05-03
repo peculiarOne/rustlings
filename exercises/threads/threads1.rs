@@ -5,7 +5,7 @@
 // of "waiting..." and the program ends without timing out the playground,
 // you've got it :)
 
-use std::sync::{Mutex,Arc};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -16,7 +16,7 @@ struct JobStatus {
 fn main() {
     println!("about to spawn");
     let status = Arc::new(Mutex::new(JobStatus { jobs_completed: 0 }));
-    let status_shared = Arc::clone(&status);
+    let status_shared = status.clone();
     thread::spawn(move || {
         for _ in 0..10 {
             thread::sleep(Duration::from_millis(250));
@@ -25,32 +25,48 @@ fn main() {
         }
     });
 
-    let jobs_completed = completed_job_count(&status);
-    println!("completed so far {}", jobs_completed);
-    while jobs_completed < 10 {
-        println!("waiting...completed so far {}", jobs_completed);
+
+    while completed_job_count(&status) < 10 {
+        println!("waiting...completed so far {}", completed_job_count(&status));
         thread::sleep(Duration::from_millis(500));
-        let jobs_completed = completed_job_count(&status);
     }
+
+    print!("all done. jobs completed: {}", status.lock().unwrap().jobs_completed);
+}
+
+fn my_main() {
+    let counter = Arc::new(Mutex::new(5));
+    let mut handles = vec![];
+
+    {
+        let counter = Arc::clone(&counter);
+        let handle = thread::spawn(move || {
+            let mut num = counter.lock().unwrap();
+            *num += 1
+        });
+        handles.push(handle);
+    }
+
+    {
+        let counter = Arc::clone(&counter);
+        let handle = thread::spawn(move || {
+            let mut num = counter.lock().unwrap();
+            *num += 1
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("final counter {}", *counter.lock().unwrap());
 }
 
 fn completed_job_count(status: &Arc<Mutex<JobStatus>>) -> u32 {
-        let status = status.clone();
-        let status = status.lock().unwrap();
-        status.jobs_completed
+    let jobStat = status.lock().unwrap();
+    jobStat.jobs_completed
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 // `Arc` is an Atomic Reference Counted pointer that allows safe, shared access
 // to **immutable** data. But we want to *change* the number of `jobs_completed`
@@ -59,31 +75,11 @@ fn completed_job_count(status: &Arc<Mutex<JobStatus>>) -> u32 {
 // https://doc.rust-lang.org/stable/book/second-edition/ch16-03-shared-state.html#atomic-reference-counting-with-arct
 // and keep scrolling if you'd like more hints :)
 
-
-
-
-
-
-
-
-
-
 // Do you now have an `Arc` `Mutex` `JobStatus` at the beginning of main? Like:
 // `let status = Arc::new(Mutex::new(JobStatus { jobs_completed: 0 }));`
 // Similar to the code in the example in the book that happens after the text
 // that says "We can use Arc<T> to fix this.". If not, give that a try! If you
 // do and would like more hints, keep scrolling!!
-
-
-
-
-
-
-
-
-
-
-
 
 // Make sure neither of your threads are holding onto the lock of the mutex
 // while they are sleeping, since this will prevent the other thread from
